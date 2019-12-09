@@ -78,7 +78,7 @@ class Opcode_Run:
                 else:
                     raise Exception("Invalid parameter mode")
                 
-                if param_pos is not 0 and param_pos >= len(memory):
+                if param_pos >= len(memory):
                     if param_pos in memory_random_access:
                         return int(memory_random_access[param_pos])
                     else:
@@ -101,7 +101,7 @@ class Opcode_Run:
                 else:
                     raise Exception("Invalid parameter mode")
                 
-                if param_pos is not 0 and param_pos >= len(memory):
+                if param_pos >= len(memory):
                     memory_random_access[param_pos] = int(val)
                 else:
                     memory[param_pos] = int(val)
