@@ -1,16 +1,12 @@
 #!/usr/bin/env python3
 
-import copy, re, time
+import re, time
+from numpy import lcm
 
 puzzle_input = """<x=17, y=-7, z=-11>
 <x=1, y=4, z=-1>
 <x=6, y=-2, z=-6>
 <x=19, y=11, z=9>"""
-
-puzzle_input = """<x=-8, y=-10, z=0>
-<x=5, y=5, z=10>
-<x=2, y=-7, z=3>
-<x=9, y=-8, z=-3>"""
 
 puzzle_input = puzzle_input.split("\n")
 
@@ -45,17 +41,57 @@ class Moon:
     
     def e_kin(self):
         return abs(self.vel[0]) + abs(self.vel[1]) + abs(self.vel[2])
-    
 
-# Part 1
-moons = []
-for id, scanned_position in enumerate(puzzle_input):
-    scanned_position = [id] + [re.search("=(-?\d+)", param)[1] for param in scanned_position.split(",")]
-    moons.append(Moon(*scanned_position))
 
-for step in range(1000):
+def get_moons(definition):
+    moons = []
+    for id, scanned_position in enumerate(definition):
+        scanned_position = [id] + [re.search("=(-?\d+)", param)[1] for param in scanned_position.split(",")]
+        moons.append(Moon(*scanned_position))
     
-    initial_moon_state = [copy.copy(moon) for moon in moons]
+    return moons
+
+
+period_length = [0]*3
+count = 0
+hist = {}
+current_dimension = 0
+moons = get_moons(puzzle_input)
+while True:
+    
+    # Part 1
+#     if count == 1000:
+#         total_energy = sum([moon.e_pot()*moon.e_kin() for moon in moons])
+#         print("# Part 1: Energy:", [[moon.e_pot(), moon.e_kin(), moon.e_pot()*moon.e_kin()] for moon in moons])
+#         print("# Part 1: Total energy:", total_energy)
+#         break
+
+    # Part 2
+    current_state = ""
+    for moon in moons:
+        current_state += str(moon.pos[current_dimension]) + "," + str(moon.vel[current_dimension]) + ","
+    
+    # Repeated pattern in current dimension found
+    if current_state in hist:
+        print("Period length =", count, "for dimension", current_dimension)
+        period_length[current_dimension] = count
+        
+        # Reset
+        count = 0
+        hist = {}
+        current_dimension += 1
+        moons = get_moons(puzzle_input)
+        
+        if current_dimension > 2:
+            print("# Part 2: KgV:", lcm(lcm(period_length[0], period_length[1]), period_length[2]))
+            break
+        
+        continue # Restart cycle
+    else:
+        hist[current_state] = 1
+    
+    # Part 1+2
+    initial_moon_state = moons[:]
     for moon in moons:
         # Update this moon with a unmodified copy of all others        
         moon.update_velocity([other_moon for other_moon in initial_moon_state if other_moon.id != moon.id])
@@ -64,41 +100,6 @@ for step in range(1000):
         # Update positions
         moon.update_position()
     
-    
-total_energy = sum([moon.e_pot()*moon.e_kin() for moon in moons])
-print("Energy:", [[moon.e_pot(), moon.e_kin(), moon.e_pot()*moon.e_kin()] for moon in moons])
-print("Total energy:", total_energy)
-
-
-# Part 2 ?????
-# moons = []
-# for id, scanned_position in enumerate(puzzle_input):
-#     scanned_position = [id] + [re.search("=(-?\d+)", param)[1] for param in scanned_position.split(",")]
-#     moons.append(Moon(*scanned_position))
-# 
-# count = 0
-# historical_states = []
-# while True:
-#     
-#     current_state = ()
-#     for moon in moons:
-#         current_state = current_state + moon.pos + moon.vel
-# 
-#     if current_state in historical_states:
-#         print(count, "Steps for previous state")
-#         break
-#     
-#     historical_states.append(current_state)
-#     
-#     initial_moon_state = [copy.copy(moon) for moon in moons]
-#     for moon in moons:
-#         # Update this moon with a unmodified copy of all others        
-#         moon.update_velocity([other_moon for other_moon in initial_moon_state if other_moon.id != moon.id])
-#     
-#     for moon in moons:
-#         # Update positions
-#         moon.update_position()
-#     
-#     count += 1
-#     if count % 10000 == 0:
-#         print(time.strftime("%H:%M:%S:"), count, "tried")
+    count += 1
+    if count % 100000 == 0:
+        print(time.strftime("%H:%M:%S:"), count, "tried for dimension", current_dimension)
