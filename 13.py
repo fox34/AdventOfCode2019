@@ -10,9 +10,6 @@ class Day13(Intcode_Computer):
     def __init__(self, instructions):
         Intcode_Computer.__init__(self, instructions)
         
-        # Aktuell erwarteter Output
-        self.output_counter = 0
-        
         # Buffer
         self.output_buffer = []
         
@@ -26,11 +23,14 @@ class Day13(Intcode_Computer):
         # Spielfeld reverse
         self.tiles_by_type = {}
     
+    # Verschiedene Tiles formatieren
     def tile_to_image(tile):
         return {0:" ", 1:"#", 2:"+", 3:"_", 4:"*"}[tile]
     
     # Teil 2
     def read_input(self):
+        
+        # Spielfeld ausgeben
         for y in range(self.height):
             print()
             for x in range(self.width):
@@ -38,11 +38,10 @@ class Day13(Intcode_Computer):
                 tile = Day13.tile_to_image(tile)
                 print(tile, end="")
         
-        # Paddle muss unter dem Ball (x-Pos) bleiben
+        # Automatisch spielen: Paddle muss unter dem Ball (x-Pos) bleiben
         diff = self.tiles_by_type[3][-1][0] - self.tiles_by_type[4][-1][0]
         
-        return 0 if diff == 0 else -1 if diff > 0 else 1        
-        #return Intcode_Computer.read_input(self)
+        return 0 if diff == 0 else -1 if diff > 0 else 1
     
     def process_output(self, output):
         
