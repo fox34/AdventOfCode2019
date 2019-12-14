@@ -1,158 +1,186 @@
 #!/usr/bin/env python3
 
-import math
-
-puzzle_input = """180 ORE => 9 DQFL
-3 HGCR, 9 TKRT => 8 ZBLC
-1 MZQLG, 12 RPLCK, 8 PDTP => 8 VCFX
-3 ZBLC, 19 VFZX => 1 SJQL
-1 CRPGK => 4 TPRT
-7 HGCR, 4 TGCW, 1 VFZX => 9 JBPHS
-8 GJHX => 4 NSDBV
-1 VFTG => 2 QNWD
-1 WDKW, 2 DWRH, 6 VNMV, 2 HFHL, 55 GJHX, 4 NSDBV, 15 KLJMS, 17 KZDJ => 1 FUEL
-2 JHSJ, 15 JNWJ, 1 ZMFXQ => 4 GVRK
-1 PJFBD => 3 MZQLG
-1 SJQL, 11 LPVWN => 9 DLZS
-3 PRMJ, 2 XNWV => 6 JHSJ
-4 SJQL => 8 PJFBD
-14 QNWD => 6 STHQ
-5 CNLFV, 2 VFTG => 9 XNWV
-17 LWNKB, 6 KBWF, 3 PLSCB => 8 KZDJ
-6 LHWZQ, 5 LWNKB => 3 ZDWX
-5 RPLCK, 2 LPVWN => 8 ZMFXQ
-1 QNWD, 2 TKRT => 3 CRPGK
-1 JBPHS, 1 XNWV => 6 TLRST
-21 ZDWX, 3 FZDP, 4 CRPGK => 6 PDTP
-1 JCVP => 1 WXDVT
-2 CRPGK => 9 FGVL
-4 DQFL, 2 VNMV => 1 HGCR
-2 GVRK, 2 VCFX, 3 PJFBD, 1 PLSCB, 23 FZDP, 22 PCSM, 1 JLVQ => 6 HFHL
-1 CRPGK, 5 PJFBD, 4 XTCP => 8 PLSCB
-1 HTZW, 17 FGVL => 3 LHWZQ
-2 KBWF => 4 DQKLC
-2 LHWZQ => 2 PRMJ
-2 DLZS, 2 VCFX, 15 PDTP, 14 ZDWX, 35 NBZC, 20 JVMF, 1 BGWMS => 3 DWRH
-2 TKVCX, 6 RPLCK, 2 HTZW => 4 XTCP
-8 CNLFV, 1 NRSD, 1 VFTG => 9 VFZX
-1 TLRST => 4 WDKW
-9 VFCZG => 7 GJHX
-4 FZDP => 8 JLVQ
-2 ZMFXQ, 2 STHQ => 6 QDZB
-2 SJQL, 8 ZDWX, 6 LPRL, 6 WXDVT, 1 TPRT, 1 JNWJ => 8 KLJMS
-6 JBPHS, 2 ZBLC => 6 HTZW
-1 PDTP, 2 LHWZQ => 8 JNWJ
-8 ZBLC => 7 TKVCX
-2 WDKW, 31 QDZB => 4 PCSM
-15 GJHX, 5 TKVCX => 7 FZDP
-15 SJQL, 3 PRMJ => 4 JCVP
-31 CNLFV => 1 TGCW
-1 TLRST, 2 WDKW => 9 KBWF
-102 ORE => 7 VNMV
-103 ORE => 5 CNLFV
-163 ORE => 2 VFTG
-5 NRSD, 1 STHQ => 3 VFCZG
-16 LPVWN, 13 KBWF => 2 BGWMS
-5 BGWMS, 11 SJQL, 9 FZDP => 6 NBZC
-175 ORE => 7 NRSD
-5 HTZW => 4 LPVWN
-4 PRMJ => 7 JVMF
-6 PCSM, 8 DQKLC => 7 LPRL
-2 CNLFV => 7 TKRT
-3 FZDP => 3 LWNKB
-1 HTZW => 4 RPLCK"""
-
-class Nanofactory:
-    def __init__(self, reactions):
-        self.reactions = reactions
-        self.surplus_material = {}
+class Intcode_Computer:
     
-    def reset(self):
-        self.surplus_material = {}
+    # Parameter-Modi
+    # POSITION_MODE: Lese/Schreibe an im Parameter angegebene Adresse
+    PARAM_MODE_POSITION = 0
+    # IMMEDIATE_MODE Nur Lesen: Wert aus Parameter übernehmen
+    PARAM_MODE_IMMEDIATE = 1
+    # RELATIVE_MODE: Lese/Schreibe an im Parameter angegebene Adresse, verschoben um variables Offset
+    PARAM_MODE_RELATIVE = 2
     
-    # Wie viel ORE benötige ich, um amount "material" herzustellen
-    def get_required_ore(self, material, amount):
+    def __init__(self, instructions):
+        self.instructions = instructions
+    
+    # Simple input: Ask user
+    def read_input(self):
+        return int(input("INPUT: "))
+    
+    # Simple output: Print to command line
+    def process_output(self, output):
+        print("OUTPUT:", output)
+    
+    # Instruktionen ausführen
+    def run(self):
         
-        # ORE: 1:1
-        if material == "ORE":
-            return amount
+        # Arbeitsspeicher
+        memory = self.instructions[:]
         
-        #print("Requested:", amount, "x", material)
+        # Bereich für beliebig große Adressen außerhalb des ursprünglichen Speichers
+        memory_random_access = {}
         
-        # Genug Materialreste
-        if material in self.surplus_material:
-            # Rest reicht
-            if amount <= self.surplus_material[material]:
-                self.surplus_material[material] -= amount
-                return 0
+        # Pointer für Parameter-Modus "RELATIVE"
+        relative_memory_pointer = 0
+        
+        # Aktueller Opcode-Zeiger
+        current_instruction_pointer = 0
+        
+        # Loop über alle Opcodes
+        while True:
             
-            # Rest aufbrauchen
-            amount -= self.surplus_material[material]
+            # Annahme: Opcodes stehen immer im normalen Speicherbereich,
+            # nicht im erweiterten Random Access-Speicher
+            # Muss ggf. in Zukunft korrigiert werden
+            if current_instruction_pointer >= len(memory):
+                raise Exception("Opcode pointer overflow")
+            
+            instruction = f"%05d" % int(memory[current_instruction_pointer])
+            instruction = list(instruction)
+            instruction.reverse()
+            current_opcode = int(instruction[1] + instruction[0])
+            parameter_modes = instruction[2:]
+            
+            def read_memory(num, mode = -1):
+                if mode == -1:
+                    mode = int(parameter_modes[num-1])
+                
+                if mode == self.PARAM_MODE_POSITION:
+                    param_pos = int(memory[current_instruction_pointer+num])
+                
+                elif mode == self.PARAM_MODE_IMMEDIATE:
+                    param_pos = current_instruction_pointer+num
+                
+                elif mode == self.PARAM_MODE_RELATIVE:
+                    param_pos = relative_memory_pointer + int(memory[current_instruction_pointer+num])
+                
+                else:
+                    raise Exception("Invalid parameter mode")
+                
+                if param_pos >= len(memory):
+                    if param_pos in memory_random_access:
+                        return int(memory_random_access[param_pos])
+                    else:
+                        return 0
+                else:
+                    return int(memory[param_pos])
+            
+            def write_memory(num, val):
+                mode = int(parameter_modes[num-1])
+            
+                if mode == self.PARAM_MODE_POSITION:
+                    param_pos = int(memory[current_instruction_pointer+num])
+                
+                elif mode == self.PARAM_MODE_IMMEDIATE:
+                    raise Exception("Cannot write in immediate mode")
+                
+                elif mode == self.PARAM_MODE_RELATIVE:
+                    param_pos = relative_memory_pointer + int(memory[current_instruction_pointer+num])
+                
+                else:
+                    raise Exception("Invalid parameter mode")
+                
+                if param_pos >= len(memory):
+                    memory_random_access[param_pos] = int(val)
+                else:
+                    memory[param_pos] = int(val)
+            
+            
+            # Starten
+            
+            if current_opcode == 1:
+                # ADD
+                param1 = read_memory(1)
+                param2 = read_memory(2)
+                result = param1 + param2
+                write_memory(3, result)
+                current_instruction_pointer += 4
         
-        # Materialrest setzen
-        self.surplus_material[material] = 0
+            
+            elif current_opcode == 2:
+                # MUL
+                param1 = read_memory(1)
+                param2 = read_memory(2)
+                result = param1 * param2
+                write_memory(3, result)
+                current_instruction_pointer += 4
+            
+            
+            elif current_opcode == 3:
+                # INPUT (Wert in Speicher schreiben)
+                write_memory(1, self.read_input())
+                current_instruction_pointer += 2
         
-        reaction = self.reactions[material]
-        #print(" Need", amount, "x", material, ":", reaction['inp'], "=>", reaction["out"])
         
-        multiplicator = 1 if reaction["out"] > amount else math.ceil(amount/reaction["out"])
-        out_amount = multiplicator * reaction["out"]
+            elif current_opcode == 4:
+                # OUTPUT (Wert aus Speicher lesen)
+                self.process_output(read_memory(1))
+                current_instruction_pointer += 2
         
-        ore = 0
-        for in_element, process_in_amount in reaction['inp'].items():
-            #print(material, ":", multiplicator, "*", process_in_amount, in_element)
-            ore += self.get_required_ore(in_element, multiplicator * process_in_amount)
         
-        # Rest aufbewahren
-        if out_amount > amount:
-            self.surplus_material[material] += out_amount - amount
+            elif current_opcode == 5:
+                # Jump if true
+                param1 = read_memory(1)
+                if (param1 != 0):
+                    current_instruction_pointer = read_memory(2)
+                else:
+                    current_instruction_pointer += 3
+            
+            
+            elif current_opcode == 6:
+                # Jump if false
+                param1 = read_memory(1)
+                if (param1 == 0):
+                    current_instruction_pointer = read_memory(2)
+                else:
+                    current_instruction_pointer += 3
+            
+            
+            elif current_opcode == 7:
+                # less than
+                param1 = read_memory(1)
+                param2 = read_memory(2)
+                if (param1 < param2):
+                    write_memory(3, 1)
+                else:
+                    write_memory(3, 0)
+                current_instruction_pointer += 4
         
-        return ore
+        
+            elif current_opcode == 8:
+                # equals
+                param1 = read_memory(1)
+                param2 = read_memory(2)
+                if (param1 == param2):
+                    write_memory(3, 1)
+                else:
+                    write_memory(3, 0)
+                current_instruction_pointer += 4
+            
+            
+            elif current_opcode == 9:
+                # adjust relative memory address base
+                param1 = read_memory(1)
+                relative_memory_pointer += param1
+                current_instruction_pointer += 2
+            
+            
+            elif current_opcode == 99:
+                # HALT
+                #print("HALT")
+                break
+            
+            
+            else:
+                raise Exception("Invalid opcode @ " + str(current_instruction_pointer) + ": " + str(current_opcode))
 
-
-puzzle_input = puzzle_input.split("\n")
-reactions = {}
-for reaction in puzzle_input:
-    in_out = reaction.split(" => ") # ["1 A, 2 B", "1 C"]
-    inp = {}
-    for obj in in_out[0].split(", "):
-        obj = obj.split(" ")
-        inp[obj[1]] = int(obj[0])
-    
-    out = in_out[1].split(" ")
-    # {"A": {"inp": [{"ORE": 10, "B": 2, ...], "out": 10}, "B": ...}
-    reactions[out[1]] = {"inp": inp, "out": int(out[0])}
-
-
-fab = Nanofactory(reactions)
-
-# Teil 1
-# 399063
-print("Part 1:", fab.get_required_ore("FUEL", 1))
-
-
-# Teil 2: Brute Force mittels Bisektion
-# 4215654
-available_ore = 1000000000000
-
-upper_limit = available_ore
-lower_limit = 1
-
-step = upper_limit - lower_limit
-num = lower_limit
-
-while True:
-    
-    fab.reset()
-    req_for_this_num = fab.get_required_ore("FUEL", num)
-    print("Required ORE for", int(num), "FUEL:", req_for_this_num)
-    
-    # Ziel erreicht
-    step = math.floor(step / 2)
-    if step < 1:
-        break
-    
-    if req_for_this_num > available_ore:
-        num -= step
-    else:
-        num += step
