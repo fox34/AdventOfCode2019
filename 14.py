@@ -66,7 +66,10 @@ class Nanofactory:
     def __init__(self, reactions):
         self.reactions = reactions
         self.surplus_material = {}
-        
+    
+    def reset(self):
+        self.surplus_material = {}
+    
     # Wie viel ORE benötige ich, um amount "material" herzustellen
     def get_required_ore(self, material, amount):
         
@@ -140,6 +143,7 @@ num = lower_limit
 
 while True:
     
+    fab.reset()
     req_for_this_num = fab.get_required_ore("FUEL", num)
     print("Required ORE for", int(num), "FUEL:", req_for_this_num)
     
